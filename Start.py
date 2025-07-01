@@ -8,6 +8,8 @@ import json
 Data:
 -AAIA
 -Sure
+-eBay
+-Bigcommerce
 We have a PIES file it contains:
 -Attributes
 -Description
@@ -30,6 +32,8 @@ We have a PIES file it contains:
 
 sure = pd.read_csv(
     r'C:\Users\Owner\Desktop\git\Data\20250625-190922-1810-products-export.csv')
+eBay = pd.read_csv(
+    r'C:\Users\Owner\Desktop\git\Data\eBay-all-active-listings-report-2025-06-30-11237259049.csv',skiprows=1)
 att = pd.read_csv(
     r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Attributes_F1.txt',
     sep="|",
