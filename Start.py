@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import requests as rq
 import json
+
+pd.set_option('display.max_rows',None)
+pd.set_option('display.max_columns',None)
 # %%
 ''' 
 Data:
@@ -29,75 +32,86 @@ We have a PIES file it contains:
 -Pricing_D1
 
 '''
-
+aaiaCode = "BKQC"
 sure = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\20250625-190922-1810-products-export.csv')
+    r'C:\Users\Owner\Desktop\git\Data\20250701-202737-187532-products-export.csv')
 eBay = pd.read_csv(
     r'C:\Users\Owner\Desktop\git\Data\eBay-all-active-listings-report-2025-06-30-11237259049.csv',skiprows=1)
+website = pd.read_csv(
+    r'C:\Users\Owner\Desktop\git\Data\products-2025-07-01.csv')
 att = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Attributes_F1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Attributes_F1.txt',
     sep="|",
     skiprows=1)
 des = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Description_C1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Description_C1.txt',
     sep="|",
     skiprows=1)
 dad = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Digital_Assets_Descriptions_P64.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Digital_Assets_Descriptions_P64.txt',
     sep="|",
     skiprows=1)
 dap = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Digital_Assets_P.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Digital_Assets_P.txt',
     sep="|",
     skiprows=1)
 exp = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Digital_Assets_P.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Digital_Assets_P.txt',
     sep="|",
     skiprows=1)
 hmj = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Hazardous_Material_J1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Hazardous_Material_J1.txt',
     sep="|",
     skiprows=1)
 hs1 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Header_Segment_A1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Header_Segment_A1.txt',
     sep="|",
     skiprows=1)
 in1 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Interchange_N1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Interchange_N1.txt',
     sep="|",
     skiprows=1)
 isb = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Item_Segment_B1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Item_Segment_B1.txt',
     sep="|",
     skiprows=1)
 kit = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Kits_K1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Kits_K1.txt',
     sep="|",
     skiprows=1)
 mca = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Market_Copy_A80.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Market_Copy_A80.txt',
     sep="|",
     skiprows=1)
 md1 =  pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Market_Copy_Digital_Assets_M01.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Market_Copy_Digital_Assets_M01.txt',
     sep="|",
     skiprows=1)
 md6 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Market_Copy_Digital_Assets_M64.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Market_Copy_Digital_Assets_M64.txt',
     sep="|",
     skiprows=1)
 pac = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Packaging_H1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Packaging_H1.txt',
     sep="|",
     skiprows=1)
 psa = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Price_Sheet_A50.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Price_Sheet_A50.txt',
     sep="|",
     skiprows=1)
 pd1 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\RealTruckInc_Pricing_D1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Pricing_D1.txt',
     sep="|",
     skiprows=1)
+
+'''
+Have to clean the website and suredone data
+Filter it down to only the brand
+'''
+website.drop(website.columns[range(78,333)],axis=1,inplace=True)
+website = website.dropna(axis=1,how='all')
+website = website[website.]
+sure = sure.dropna(axis=1,how='all')
 # %%
 '''
 It needs to do the following:
@@ -147,4 +161,32 @@ meyerProdUrl = "https://meyerapi.meyerdistributing.com/http/default/ProdAPI/v2/"
 creds = open(r"C:\Users\Owner\Desktop\git\creds.json")
 meyerToken = json.load(creds)["meyer"].get("prod")
 creds.close()
+# %%
+'''
+Suredone is our source of truth so we are going to run a few checks:
+-Pricing (MAP) 
+-New Product
+-Discontinued Product
+    -From SD
+    -From Turn
+Some of these checks can be done sheet to sheet
+Anything that uses a call should filter it down to only the necessary rows
+'''
+
+# %%
+'''
+Pricing
+First step is identifying all specific listings: 
+- (House) are not going to be managed via this application
+- COMBO are kits that are made up of multiple items and should be handled and seperated differently
+- SNRV are managed independently and locally on each website
+- -AAIA code are managed by suredone and can be changed via a suredone import
+1. Find the House on eBay / Suredone / Website and drop them
+2. Combos go into a file call kits
+3. 
+'''
+sure = sure[~sure['guid'].str.contains("house",na=False, case=False)]
+sureKits = sure[sure['guid'].str.contains("combo",na=False, case=False)]
+sure = sure[~sure['guid'].str.contains("combo",na=False, case=False)]
+
 # %%
