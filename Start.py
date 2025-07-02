@@ -10,9 +10,10 @@ pd.set_option('display.max_columns',None)
 ''' 
 Data:
 -AAIA
+-Brand
 -Sure
 -eBay
--Bigcommerce
+-Bigcommerce = website
 We have a PIES file it contains:
 -Attributes
 -Description
@@ -33,6 +34,7 @@ We have a PIES file it contains:
 
 '''
 aaiaCode = "BKQC"
+brand = "Banks Power"
 sure = pd.read_csv(
     r'C:\Users\Owner\Desktop\git\Data\20250701-202737-187532-products-export.csv')
 eBay = pd.read_csv(
@@ -56,7 +58,7 @@ dap = pd.read_csv(
     sep="|",
     skiprows=1)
 exp = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Digital_Assets_P.txt',
+    r'C:\Users\Owner\Desktop\git\Data\BanksPower_EXPI_E1.txt',
     sep="|",
     skiprows=1)
 hmj = pd.read_csv(
@@ -104,14 +106,30 @@ pd1 = pd.read_csv(
     sep="|",
     skiprows=1)
 
+
+
 '''
 Have to clean the website and suredone data
 Filter it down to only the brand
 '''
 website.drop(website.columns[range(78,333)],axis=1,inplace=True)
 website = website.dropna(axis=1,how='all')
-website = website[website.]
 sure = sure.dropna(axis=1,how='all')
+eBay = eBay.dropna(axis=1,how='all')
+ # %%
+'''
+All of these files are in XML so I am going to try pivot it out into a more flat way
+'''
+expFlat = exp.pivot(index='Part Number',columns='EXPI Code',values='EXPI Data')
+pd1Flat = pd1.pivot(index='Part Number ',columns='Price Type',values='Price')
+
+
+# %%
+website = website[website['Brand Name'] == "Banks Power"]
+sure = sure[sure['guid'].str.contains(aaiaCode,case=False,na=False)]
+eBay = eBay[(eBay['Title'].str.contains("Banks",case=False,na=False)) + 
+            (eBay['Listing site'] == 'US')]
+
 # %%
 '''
 It needs to do the following:
@@ -172,10 +190,8 @@ Suredone is our source of truth so we are going to run a few checks:
 Some of these checks can be done sheet to sheet
 Anything that uses a call should filter it down to only the necessary rows
 '''
-
 # %%
 '''
-Pricing
 First step is identifying all specific listings: 
 - (House) are not going to be managed via this application
 - COMBO are kits that are made up of multiple items and should be handled and seperated differently
@@ -183,10 +199,40 @@ First step is identifying all specific listings:
 - -AAIA code are managed by suredone and can be changed via a suredone import
 1. Find the House on eBay / Suredone / Website and drop them
 2. Combos go into a file call kits
-3. 
+3. SNRV
+4. Sure has all AAIA coded, and website and ebay SNRV will have the local changes
 '''
 sure = sure[~sure['guid'].str.contains("house",na=False, case=False)]
+sure = sure[~sure['guid'].str.contains("SNRV",na=False, case=False)]
 sureKits = sure[sure['guid'].str.contains("combo",na=False, case=False)]
 sure = sure[~sure['guid'].str.contains("combo",na=False, case=False)]
 
+eBay = eBay[~eBay['Custom label (SKU)'].str.contains("house",na=False, case=False)]
+eBaySNRV = eBay[eBay['Custom label (SKU)'].str.contains("SNRV",na=False, case=False)]
+eBay = eBay[~eBay['Custom label (SKU)'].str.contains("SNRV",na=False, case=False)]
+eBayKits = eBay[eBay['Custom label (SKU)'].str.contains("combo",na=False, case=False)]
+eBay = eBay[~eBay['Custom label (SKU)'].str.contains("combo",na=False, case=False)]
+
+website = website[~website['Product Code/SKU'].str.contains("house",na=False, case=False)]
+websiteSNRV = website[website['Product Code/SKU'].str.contains("SNRV",na=False, case=False)]
+website = website[~website['Product Code/SKU'].str.contains("SNRV",na=False, case=False)]
+websiteKits = website[(website['Product Code/SKU'].str.contains("/",na=False, case=False)) + 
+                      (website['Product Code/SKU'].str.contains(" ",na=False, case=False)) + 
+                      (website['Product Code/SKU'].str.contains("combo",na=False, case=False))]
+website = website[~(website['Product Code/SKU'].str.contains("/",na=False, case=False)) + 
+                      (website['Product Code/SKU'].str.contains(" ",na=False, case=False)) + 
+                      (website['Product Code/SKU'].str.contains("combo",na=False, case=False))]
+# %%
+'''
+Discontinued List
+1. Has a discontinued or is not found SD 
+2. Check Inventory in Keystone if not found
+3. Send API request for inventory in Turn 14 if not found
+4. Generate potential discontinued list
+'''
+
+# %%
+'''
+Pricing
+'''
 # %%
