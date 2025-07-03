@@ -127,9 +127,10 @@ pd1Flat = pd1.pivot(index='Part Number ',columns='Price Type',values='Price')
 # %%
 website = website[website['Brand Name'] == "Banks Power"]
 sure = sure[sure['guid'].str.contains(aaiaCode,case=False,na=False)]
-eBay = eBay[(eBay['Title'].str.contains("Banks",case=False,na=False)) + 
-            (eBay['Listing site'] == 'US')]
-
+eBay = eBay[
+    (eBay['Title'].str.contains("Banks",na=False, case=False)) & 
+    (eBay["Listing site"] == "US")]
+website.rename(columns={"Manufacturer Part Number" : "mpn"},inplace=True)
 # %%
 '''
 It needs to do the following:
@@ -142,6 +143,7 @@ Pull pricing from warehouses:
 '''
 keystone = pd.read_csv(
     r'C:\Users\Owner\Desktop\git\Data\Inventory.csv')
+keystone.PartNumber = keystone.PartNumber.str[2:-1]
 # %%
 '''
 Requests
@@ -157,6 +159,19 @@ Turnaccess = rq.post(turnUrl+"v1/token",data={'grant_type' : 'client_credentials
                                       'client_id':client,
                                       'client_secret': secret})
 turnToken = Turnaccess.json().get("access_token")
+# %%
+'''
+GET/v1/brands
+Retrieve a list of all brands that Turn 14 carries
+
+NOTE: Use the id attribute from this endpoint as the brand_id parameter on the inventory or pricing endpoints to pull information for specific brands
+'''
+brandCode = rq.get(turnUrl+"v1/brands",headers={'Authorization':"Bearer " +turnToken},data={"Content-Type":'application/json'}).json().get("AAIA")
+# %%
+brandCodeList = []
+for brand in brandCode.json().get('data'):
+    priceCodeList = []
+    brandCodeList.append((brand.get("attributes").get("AAIA"),brand.get("attributes").get("pricegroups")))
 # %%
 '''
 Requests
@@ -209,19 +224,73 @@ sure = sure[~sure['guid'].str.contains("combo",na=False, case=False)]
 
 eBay = eBay[~eBay['Custom label (SKU)'].str.contains("house",na=False, case=False)]
 eBaySNRV = eBay[eBay['Custom label (SKU)'].str.contains("SNRV",na=False, case=False)]
+eBaySNRV["mpn"] = eBaySNRV["Custom label (SKU)"].str[4:-5]
 eBay = eBay[~eBay['Custom label (SKU)'].str.contains("SNRV",na=False, case=False)]
 eBayKits = eBay[eBay['Custom label (SKU)'].str.contains("combo",na=False, case=False)]
+eBayKits["mpn"] = eBayKits["Custom label (SKU)"].str[5:-5]
 eBay = eBay[~eBay['Custom label (SKU)'].str.contains("combo",na=False, case=False)]
+eBay["mpn"] = eBay["Custom label (SKU)"].str[:-5]
 
-website = website[~website['Product Code/SKU'].str.contains("house",na=False, case=False)]
-websiteSNRV = website[website['Product Code/SKU'].str.contains("SNRV",na=False, case=False)]
-website = website[~website['Product Code/SKU'].str.contains("SNRV",na=False, case=False)]
-websiteKits = website[(website['Product Code/SKU'].str.contains("/",na=False, case=False)) + 
-                      (website['Product Code/SKU'].str.contains(" ",na=False, case=False)) + 
-                      (website['Product Code/SKU'].str.contains("combo",na=False, case=False))]
-website = website[~(website['Product Code/SKU'].str.contains("/",na=False, case=False)) + 
-                      (website['Product Code/SKU'].str.contains(" ",na=False, case=False)) + 
-                      (website['Product Code/SKU'].str.contains("combo",na=False, case=False))]
+
+website = website[~website['mpn'].str.contains("house",na=False, case=False)]
+websiteSNRV = website[website['mpn'].str.contains("SNRV",na=False, case=False)]
+website = website[~website['mpn'].str.contains("SNRV",na=False, case=False)]
+websiteKits = website[(website['mpn'].str.contains("/",na=False, case=False)) + 
+                      (website['mpn'].str.contains(" ",na=False, case=False)) + 
+                      (website['mpn'].str.contains("combo",na=False, case=False))]
+website = website[~(website['mpn'].str.contains("/",na=False, case=False)) + 
+                      (website['mpn'].str.contains(" ",na=False, case=False)) + 
+                      (website['mpn'].str.contains("combo",na=False, case=False))]
+# %%                  
+'''
+Merge DFs
+'''
+mergedeBay = pd.merge(
+    eBay,expFlat,how="left",left_on="mpn",right_index=True)
+mergedeBay = pd.merge(
+    mergedeBay,pd1Flat,how="left",left_on="mpn",right_index=True)
+mergedeBaySNRV = pd.merge(
+    eBaySNRV,expFlat,how="left",left_on="mpn",right_index=True)
+mergedeBaySNRV = pd.merge(
+    mergedeBaySNRV,pd1Flat,how="left",left_on="mpn",right_index=True)
+mergedSure = pd.merge(
+    sure,expFlat,how="left",left_on="mpn",right_index=True)
+mergedSure = pd.merge(
+    mergedSure,pd1Flat,how="left",left_on="mpn",right_index=True)
+mergedWebsite = pd.merge(
+    website,expFlat,how="left",left_on="Product Code/SKU",right_index=True)
+mergedWebsite = pd.merge(
+    mergedWebsite,pd1Flat,how="left",left_on="Product Code/SKU",right_index=True)
+mergedWebsiteSNRV = pd.merge(
+    websiteSNRV,expFlat,how="left",left_on="Product Code/SKU",right_index=True)
+mergedWebsiteSNRV = pd.merge(
+    mergedWebsiteSNRV,pd1Flat,how="left",left_on="Product Code/SKU",right_index=True)
+# %%
+'''
+Check Inventory
+'''
+def checkWarhouse(row):
+    row["keystone"] = keystone[(keystone["PartNumber"] == row['mpn']) & 
+                               (keystone["AAIACode"] == aaiaCode)]["TotalQty"]
+    '''
+    GET/v1/inventory/{item_id}
+Obtain the inventory of specific items across all of Turn 14’s locations
+
+Note:
+
+Inventory is keyed by location_id. To find the list of active locations query the locations endpoint.
+
+There is a limit of 250 items per request. Requesitng more than 250 items will result in a 400 error.
+
+URI ParametersHide
+item_id
+string (required) Example: 15074,262374,1001
+A comma separated list of item ID’s
+    '''
+    row["turn"] = rq.get(turnUrl+"v1/inventory/"+row["mpn"],headers={'Authorization':"Bearer " + turnToken},
+    data={"Content-Type":'application/json'})
+    return row
+
 # %%
 '''
 Discontinued List
@@ -230,7 +299,11 @@ Discontinued List
 3. Send API request for inventory in Turn 14 if not found
 4. Generate potential discontinued list
 '''
-
+eBayDis = mergedeBay[~mergedeBay["LIS"].str.contains("Available To Order",case=False,na=False)]
+eBayDisSNRV = mergedeBaySNRV[~mergedeBaySNRV["LIS"].str.contains("Available To Order",case=False,na=False)]
+sureDis = mergedSure[~mergedSure["LIS"].str.contains("Available To Order",case=False,na=False)]
+websiteDis = mergedWebsite[~mergedWebsite["LIS"].str.contains("Available To Order",case=False,na=False)]
+websiteDisSNRV = mergedWebsiteSNRV[~mergedWebsiteSNRV["LIS"].str.contains("Available To Order",case=False,na=False)]
 # %%
 '''
 Pricing
