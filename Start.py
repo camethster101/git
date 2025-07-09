@@ -122,7 +122,10 @@ All of these files are in XML so I am going to try pivot it out into a more flat
 '''
 expFlat = exp.pivot(index='Part Number',columns='EXPI Code',values='EXPI Data')
 pd1Flat = pd1.pivot(index='Part Number ',columns='Price Type',values='Price')
-
+brandCodeTurn = ""
+brandCodePremier =
+brandCodeKeystone =
+brandCodeMeyers =
 
 # %%
 website = website[website['Brand Name'] == "Banks Power"]
@@ -289,6 +292,7 @@ A comma separated list of item ID’s
     '''
     row["turn"] = rq.get(turnUrl+"v1/inventory/"+row["mpn"],headers={'Authorization':"Bearer " + turnToken},
     data={"Content-Type":'application/json'})
+    row["premier"] = 
     return row
 
 # %%
