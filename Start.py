@@ -122,10 +122,10 @@ All of these files are in XML so I am going to try pivot it out into a more flat
 '''
 expFlat = exp.pivot(index='Part Number',columns='EXPI Code',values='EXPI Data')
 pd1Flat = pd1.pivot(index='Part Number ',columns='Price Type',values='Price')
-brandCodeTurn = ""
-brandCodePremier =
-brandCodeKeystone =
-brandCodeMeyers =
+brandCodeTurn = input("Turn 14 Brand Code:")
+brandCodePremier = input("Premier Brand Code:")
+brandCodeKeystone = input("Keystone Brand Code:")
+brandCodeMeyers = input("Meyers Brand Code:")
 
 # %%
 website = website[website['Brand Name'] == "Banks Power"]
@@ -169,12 +169,17 @@ Retrieve a list of all brands that Turn 14 carries
 
 NOTE: Use the id attribute from this endpoint as the brand_id parameter on the inventory or pricing endpoints to pull information for specific brands
 '''
-brandCode = rq.get(turnUrl+"v1/brands",headers={'Authorization':"Bearer " +turnToken},data={"Content-Type":'application/json'}).json().get("AAIA")
+brandCode = rq.get(turnUrl+"v1/brands",headers={'Authorization':"Bearer " +turnToken},data={"Content-Type":'application/json'})
 # %%
-brandCodeList = []
-for brand in brandCode.json().get('data'):
-    priceCodeList = []
-    brandCodeList.append((brand.get("attributes").get("AAIA"),brand.get("attributes").get("pricegroups")))
+brandCodeDF = pd.DataFrame()
+brandCodeDF["AAIA"] = pd.Series()
+brandCodeDF["id"] = pd.Series()
+for index, brand in enumerate(brandCode.json().get('data')):
+    try:
+        brandCodeDF[index,"AIAA"] = brand.get("attributes").get("AAIA")[0]
+    except:
+        brandCodeDF[index,"AIAA"] = brand.get("attributes").get("AAIA")
+    brandCodeDF[index,"id"] = brand.get("id")
 # %%
 '''
 Requests
@@ -290,9 +295,13 @@ item_id
 string (required) Example: 15074,262374,1001
 A comma separated list of item ID’s
     '''
-    row["turn"] = rq.get(turnUrl+"v1/inventory/"+row["mpn"],headers={'Authorization':"Bearer " + turnToken},
+    row["turn"] = rq.get(turnUrl+"v1/inventory/"+brandCodeTurn+row["mpn"],headers={'Authorization':"Bearer " + turnToken},
     data={"Content-Type":'application/json'})
-    row["premier"] = 
+    row["premier"] = rq.get(premProdUrl+"/inventory?"+brandCodePremier+row["mpn"],headers={'Authorization':"Bearer " + premierToken},
+    data={"Content-Type":'application/json'})
+    row["meyer"] = rq.get(meyerProdUrl+"/ItemInformation?ItemNumber="+brandCodeMeyers+row["mpn"],headers={'Authorization':"Bearer " + meyerToken},
+    data={"Content-Type":'application/json'})
+
     return row
 
 # %%
@@ -300,14 +309,34 @@ A comma separated list of item ID’s
 Discontinued List
 1. Has a discontinued or is not found SD 
 2. Check Inventory in Keystone if not found
-3. Send API request for inventory in Turn 14 if not found
-4. Generate potential discontinued list
+3. Generate upload files
+4. 
+
 '''
 eBayDis = mergedeBay[~mergedeBay["LIS"].str.contains("Available To Order",case=False,na=False)]
 eBayDisSNRV = mergedeBaySNRV[~mergedeBaySNRV["LIS"].str.contains("Available To Order",case=False,na=False)]
 sureDis = mergedSure[~mergedSure["LIS"].str.contains("Available To Order",case=False,na=False)]
 websiteDis = mergedWebsite[~mergedWebsite["LIS"].str.contains("Available To Order",case=False,na=False)]
 websiteDisSNRV = mergedWebsiteSNRV[~mergedWebsiteSNRV["LIS"].str.contains("Available To Order",case=False,na=False)]
+
+disList = []
+disList.append(eBayDis)
+disList.append(eBayDisSNRV)
+disList.append(sureDis)
+disList.append(websiteDis)
+disList.append(websiteDisSNRV)
+
+keyList = []
+for df in disList:
+    if not(df.empty):
+        df = pd.merge(df,keystone[["PartNumber","TotalQty"]],left_on='mpn',right_on='PartNumber',how='left')
+        keyList.append(df)
+
+keyList[0]
+sureRM = keyList[0]
+sureRM.Action = "Delete"
+sureRM.dropna(axis=1,how='all')
+
 # %%
 '''
 Pricing
