@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import requests as rq
 import json
+import os
 
 pd.set_option('display.max_rows',None)
 pd.set_option('display.max_columns',None)
@@ -33,76 +34,76 @@ We have a PIES file it contains:
 -Pricing_D1
 
 '''
-aaiaCode = "BKQC"
-brand = "Banks Power"
+aaiaCode = "BKLD"
+brand = "Injen"
 sure = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\20250701-202737-187532-products-export.csv')
+    r'C:\Users\Owner\Desktop\git\Data\20250729-204451-1286-products-bkld-export.csv')
 eBay = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\eBay-all-active-listings-report-2025-06-30-11237259049.csv',skiprows=1)
+    r'C:\Users\Owner\Desktop\git\Data\eBay-all-active-listings-report-2025-07-29-12255560032.csv')
 website = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\products-2025-07-01.csv')
+    r'C:\Users\Owner\Desktop\git\Data\products-2025-07-29 (1).csv')
 att = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Attributes_F1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Attributes_F1.txt',
     sep="|",
     skiprows=1)
 des = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Description_C1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Description_C1.txt',
     sep="|",
     skiprows=1)
 dad = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Digital_Assets_Descriptions_P64.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Digital_Assets_Descriptions_P64.txt',
     sep="|",
     skiprows=1)
 dap = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Digital_Assets_P.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Digital_Assets_P.txt',
     sep="|",
     skiprows=1)
 exp = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_EXPI_E1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_EXPI_E1.txt',
     sep="|",
     skiprows=1)
 hmj = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Hazardous_Material_J1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Hazardous_Material_J1.txt',
     sep="|",
     skiprows=1)
 hs1 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Header_Segment_A1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Header_Segment_A1.txt',
     sep="|",
     skiprows=1)
 in1 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Interchange_N1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Interchange_N1.txt',
     sep="|",
     skiprows=1)
 isb = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Item_Segment_B1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Item_Segment_B1.txt',
     sep="|",
     skiprows=1)
 kit = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Kits_K1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Kits_K1.txt',
     sep="|",
     skiprows=1)
 mca = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Market_Copy_A80.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Market_Copy_A80.txt',
     sep="|",
     skiprows=1)
 md1 =  pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Market_Copy_Digital_Assets_M01.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Market_Copy_Digital_Assets_M01.txt',
     sep="|",
     skiprows=1)
 md6 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Market_Copy_Digital_Assets_M64.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Market_Copy_Digital_Assets_M64.txt',
     sep="|",
     skiprows=1)
 pac = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Packaging_H1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Packaging_H1.txt',
     sep="|",
     skiprows=1)
 psa = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Price_Sheet_A50.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Price_Sheet_A50.txt',
     sep="|",
     skiprows=1)
 pd1 = pd.read_csv(
-    r'C:\Users\Owner\Desktop\git\Data\BanksPower_Pricing_D1.txt',
+    r'C:\Users\Owner\Desktop\git\Data\Injen_Pricing_D1.txt',
     sep="|",
     skiprows=1)
 
@@ -122,16 +123,13 @@ All of these files are in XML so I am going to try pivot it out into a more flat
 '''
 expFlat = exp.pivot(index='Part Number',columns='EXPI Code',values='EXPI Data')
 pd1Flat = pd1.pivot(index='Part Number ',columns='Price Type',values='Price')
-brandCodeTurn = input("Turn 14 Brand Code:")
-brandCodePremier = input("Premier Brand Code:")
-brandCodeKeystone = input("Keystone Brand Code:")
-brandCodeMeyers = input("Meyers Brand Code:")
+
 
 # %%
-website = website[website['Brand Name'] == "Banks Power"]
+website = website[website['Brand Name'] == "Injen"]
 sure = sure[sure['guid'].str.contains(aaiaCode,case=False,na=False)]
 eBay = eBay[
-    (eBay['Title'].str.contains("Banks",na=False, case=False)) & 
+    (eBay['Title'].str.contains("Injen",na=False, case=False)) & 
     (eBay["Listing site"] == "US")]
 website.rename(columns={"Manufacturer Part Number" : "mpn"},inplace=True)
 # %%
@@ -227,8 +225,8 @@ First step is identifying all specific listings:
 '''
 sure = sure[~sure['guid'].str.contains("house",na=False, case=False)]
 sure = sure[~sure['guid'].str.contains("SNRV",na=False, case=False)]
-sureKits = sure[sure['guid'].str.contains("combo",na=False, case=False)]
-sure = sure[~sure['guid'].str.contains("combo",na=False, case=False)]
+sureKits = sure[sure['guid'].str.contains("kit",na=False, case=False)]
+sure = sure[~sure['guid'].str.contains("kit",na=False, case=False)]
 
 eBay = eBay[~eBay['Custom label (SKU)'].str.contains("house",na=False, case=False)]
 eBaySNRV = eBay[eBay['Custom label (SKU)'].str.contains("SNRV",na=False, case=False)]
@@ -273,36 +271,6 @@ mergedWebsiteSNRV = pd.merge(
     websiteSNRV,expFlat,how="left",left_on="Product Code/SKU",right_index=True)
 mergedWebsiteSNRV = pd.merge(
     mergedWebsiteSNRV,pd1Flat,how="left",left_on="Product Code/SKU",right_index=True)
-# %%
-'''
-Check Inventory
-'''
-def checkWarhouse(row):
-    row["keystone"] = keystone[(keystone["PartNumber"] == row['mpn']) & 
-                               (keystone["AAIACode"] == aaiaCode)]["TotalQty"]
-    '''
-    GET/v1/inventory/{item_id}
-Obtain the inventory of specific items across all of Turn 14’s locations
-
-Note:
-
-Inventory is keyed by location_id. To find the list of active locations query the locations endpoint.
-
-There is a limit of 250 items per request. Requesitng more than 250 items will result in a 400 error.
-
-URI ParametersHide
-item_id
-string (required) Example: 15074,262374,1001
-A comma separated list of item ID’s
-    '''
-    row["turn"] = rq.get(turnUrl+"v1/inventory/"+brandCodeTurn+row["mpn"],headers={'Authorization':"Bearer " + turnToken},
-    data={"Content-Type":'application/json'})
-    row["premier"] = rq.get(premProdUrl+"/inventory?"+brandCodePremier+row["mpn"],headers={'Authorization':"Bearer " + premierToken},
-    data={"Content-Type":'application/json'})
-    row["meyer"] = rq.get(meyerProdUrl+"/ItemInformation?ItemNumber="+brandCodeMeyers+row["mpn"],headers={'Authorization':"Bearer " + meyerToken},
-    data={"Content-Type":'application/json'})
-
-    return row
 
 # %%
 '''
@@ -333,12 +301,31 @@ for df in disList:
         keyList.append(df)
 
 keyList[0]
-sureRM = keyList[0]
-sureRM.Action = "Delete"
-sureRM.dropna(axis=1,how='all')
 
+eBayRM = pd.DataFrame()
+eBayRM["Item number"] = keyList[0]["Item number"]
+eBayRM["EndingReason"] = "NotAvailable"
+eBayRM["Action"] = "End"
+
+sureRM = pd.DataFrame()
+sureRM["action=Delete"] = pd.Series()
+sureRM["guid"] = sureDis["guid"]
+
+
+websiteRM = pd.DataFrame()
+websiteRM.index = websiteDis.index
+websiteRM["Product ID"] = websiteDis["Product ID"]
+websiteRM["Product Name"] = websiteDis["Product Name"]
+websiteRM["Category"] = "Delete"
+
+# %%
+os.makedirs('Results',exist_ok=True)
+eBayRM.to_csv("Results/eBayRM.csv",index=False)
+sureRM.to_csv("Results/sureRM.csv",index=False)
+websiteRM.to_csv("Results/websiteRM.csv",index=False)
 # %%
 '''
 Pricing
 '''
+
 # %%
